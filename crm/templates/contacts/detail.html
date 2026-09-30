@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, stage_pill, tags as tag_list, status_pill, delete_button with context %}
+{% block title %}{{ (c.first_name ~ ' ' ~ c.last_name).strip() or c.email }}{% endblock %}
+{% set icons = {'note': '📝', 'call': '📞', 'meeting': '🤝', 'email_sent': '✉️', 'email_open': '👀',
+  'email_click': '🔗', 'content_view': '📖', 'stage_change': '⬆️', 'unsubscribe': '🚫',
+  'resubscribe': '✅', 'enrolled': '🔁', 'unenrolled': '⏹️', 'deal': '💼', 'created': '➕',
+  'form': '📥', 'email_failed': '⚠️'} %}
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb"><a href="{{ url_for('views.contacts') }}">Contacts</a></div>
+    <h1>{{ (c.first_name ~ ' ' ~ c.last_name).strip() or c.email }}</h1>
+    <div class="muted">{{ c.title }}{% if c.title and c.company %} at {% endif %}{{ c.company }}</div>
+  </div>
+  <div class="actions">
+    {% if not c.unsubscribed %}<a class="btn primary" href="{{ url_for('views.compose', contact_id=c.id) }}">Send email</a>{% endif %}
+    <a class="btn" href="{{ url_for('views.contact_edit', contact_id=c.id) }}">Edit</a>
+    {{ delete_button(url_for('views.contact_delete', contact_id=c.id), confirm='Delete this contact and all their history?') }}
+  </div>
+</div>
+
+<div class="grid side-main">
+  <div>
+    <div class="panel">
+      <form method="post" action="{{ url_for('views.contact_stage', contact_id=c.id) }}" style="margin-bottom:14px">
+        {{ csrf() }}
+        <label>Stage</label>
+        <select name="stage" onchange="this.form.submit()">
+          {% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if s == c.stage }}>{{ s|capitalize }}</option>{% endfor %}
+        </select>
+      </form>
+      <dl class="facts">
+        <dt>Email</dt><dd><a href="mailto:{{ c.email }}">{{ c.email }}</a>
+          {% if c.unsubscribed %}<br><span class="pill unsub">Unsubscribed</span>{% endif %}</dd>
+        {% if c.phone %}<dt>Phone</dt><dd><a href="tel:{{ c.phone }}">{{ c.phone }}</a></dd>{% endif %}
+        {% if c.source %}<dt>Source</dt><dd>{{ c.source }}</dd>{% endif %}
+        <dt>Tags</dt><dd>{{ tag_list(c.tags) or '—' }}</dd>
+        <dt>Added</dt><dd>{{ c.created_at|dt(false) }}</dd>
+        <dt>Emails</dt><dd>{{ stats.sent }} sent · {{ stats.open_rate }}% opened · {{ stats.click_rate }}% clicked</dd>
+      </dl>
+      {% if c.notes %}<p style="margin-top:14px;white-space:pre-wrap">{{ c.notes }}</p>{% endif %}
+      {% if c.unsubscribed %}
+      <form method="post" action="{{ url_for('views.contact_resubscribe', contact_id=c.id) }}" style="margin-top:12px"
+            data-confirm="Only resubscribe someone who asked you to. Continue?">
+        {{ csrf() }}<button class="btn small" type="submit">Resubscribe</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>Nurture sequences</h2>
+      {% for e in enrollments %}
+        <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px">
+          <div><a href="{{ url_for('views.sequence_edit', sequence_id=e.sequence_id) }}">{{ e.name }}</a>
+            <div class="muted" style="font-size:12px">{{ status_pill(e.status) }}
+              {% if e.status == 'active' %}Next email {{ e.next_send_at|dt }}{% endif %}</div></div>
+          {% if e.status == 'active' %}
+          <form method="post" action="{{ url_for('views.enrollment_stop', enrollment_id=e.id) }}" data-confirm="Stop sending this sequence to this contact?">
+            {{ csrf() }}<button class="linkish danger" type="submit">Stop</button>
+          </form>
+          {% endif %}
+        </div>
+      {% else %}<p class="muted">Not in any sequence.</p>{% endfor %}
+      {% if sequences and not c.unsubscribed %}
+      <form method="post" action="{{ url_for('views.contact_enroll', contact_id=c.id) }}" class="filters" style="margin-top:10px">
+        {{ csrf() }}
+        <select name="sequence_id" style="flex:1;min-width:0">{% for s in sequences %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+        <button class="btn small" type="submit">Enroll</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 style="margin:0">Deals</h2>
+        <a class="btn small" href="{{ url_for('views.deals', contact_id=c.id) }}#new">Add deal</a></div>
+      {% for d in deals %}
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span>{{ d.name }} <span class="pill {{ d.stage }}">{{ d.stage }}</span></span><strong>{{ d.value|money }}</strong>
+        </div>
+      {% else %}<p class="muted">No deals yet.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <form method="post" action="{{ url_for('views.contact_log', contact_id=c.id) }}">
+        {{ csrf() }}
+        <div class="filters" style="margin-bottom:8px">
+          <select name="kind" style="min-width:0">
+            <option value="note">Add a note</option>
+            <option value="call">Log a call</option>
+            <option value="meeting">Log a meeting</option>
+          </select>
+        </div>
+        <textarea name="detail" placeholder="What happened? What's next?" style="min-height:80px" required></textarea>
+        <button class="btn small primary" type="submit" style="margin-top:8px">Save</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Timeline</h2>
+      <ul class="timeline">
+      {% for a in activities %}
+        <li>
+          <div class="dot">{{ icons.get(a.kind, '•') }}</div>
+          <div style="min-width:0">
+            <div class="what">{{ a.subject }}
+              {% if a.kind == 'email_sent' and a.detail.startswith('email:') %}
+                <a href="{{ url_for('views.email_view', email_id=a.detail[6:]) }}" style="font-weight:400;font-size:13px">view</a>
+              {% endif %}</div>
+            {% if a.detail and not a.detail.startswith('email:') %}<div class="detail">{{ a.detail }}</div>{% endif %}
+            <div class="when">{{ a.created_at|dt }}</div>
+          </div>
+        </li>
+      {% else %}<li class="muted">No activity yet.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

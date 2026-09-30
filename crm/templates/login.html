@@ -1,0 +1,9 @@
+{% extends "auth_base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<h1>Log in</h1>
+<form method="post" style="margin-top:16px">
+  <div class="field"><label>Password</label><input type="password" name="password" autofocus required></div>
+  <button class="btn primary" type="submit">Log in</button>
+</form>
+{% endblock %}

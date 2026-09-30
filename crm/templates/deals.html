@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, delete_button with context %}
+{% block title %}Deals{% endblock %}
+{% macro deal_fields(d={}) %}
+  <div class="field"><label>Deal name</label><input type="text" name="name" value="{{ d.name or '' }}" required></div>
+  <div class="row">
+    <div class="field"><label>Value ($)</label><input type="text" name="value" value="{{ '%g'|format(d.value) if d.value else '' }}" inputmode="decimal"></div>
+    <div class="field"><label>Expected close</label><input type="date" name="close_date" value="{{ d.close_date or '' }}"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Contact</label>
+      <select name="contact_id"><option value="">—</option>
+        {% for c in contacts %}<option value="{{ c.id }}" {{ 'selected' if c.id == (d.contact_id or preselect) }}>{{ (c.first_name ~ ' ' ~ c.last_name).strip() or c.email }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label>Stage</label>
+      <select name="stage">{% for s in DEAL_STAGES %}<option value="{{ s }}" {{ 'selected' if s == d.stage }}>{{ s|capitalize }}</option>{% endfor %}</select></div>
+  </div>
+{% endmacro %}
+{% block content %}
+<div class="head"><h1>Deals</h1></div>
+
+<div class="board">
+{% for stage in DEAL_STAGES %}
+  <div class="column">
+    <h3><span>{{ stage }}</span><span>{{ totals[stage]|money }}</span></h3>
+    {% for d in columns[stage] %}
+      <div class="card">
+        <div><strong>{{ d.name }}</strong></div>
+        <div class="amount">{{ d.value|money }}</div>
+        {% if d.contact_id %}<div><a href="{{ url_for('views.contact_detail', contact_id=d.contact_id) }}" style="font-size:13px">{{ (d.first_name ~ ' ' ~ d.last_name).strip() }}{% if d.company %} · {{ d.company }}{% endif %}</a></div>{% endif %}
+        {% if d.close_date %}<div class="muted" style="font-size:12px">Close {{ d.close_date }}</div>{% endif %}
+        <form method="post" action="{{ url_for('views.deal_save') }}">
+          {{ csrf() }}
+          <input type="hidden" name="id" value="{{ d.id }}"><input type="hidden" name="name" value="{{ d.name }}">
+          <input type="hidden" name="value" value="{{ d.value }}"><input type="hidden" name="contact_id" value="{{ d.contact_id or '' }}">
+          <input type="hidden" name="close_date" value="{{ d.close_date }}">
+          <select name="stage" onchange="this.form.submit()" aria-label="Move deal">
+            {% for s in DEAL_STAGES %}<option value="{{ s }}" {{ 'selected' if s == d.stage }}>Move to: {{ s }}</option>{% endfor %}
+          </select>
+        </form>
+        <details style="margin-top:6px;font-size:13px"><summary class="muted">Edit</summary>
+          <form method="post" action="{{ url_for('views.deal_save') }}" style="margin-top:8px">
+            {{ csrf() }}<input type="hidden" name="id" value="{{ d.id }}">
+            {{ deal_fields(d) }}
+            <button class="btn small primary" type="submit">Save</button>
+          </form>
+          <div style="margin-top:6px">{{ delete_button(url_for('views.deal_delete', deal_id=d.id)) }}</div>
+        </details>
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+</div>
+
+<div class="panel" id="new" style="max-width:640px;margin-top:20px">
+  <h2>Add a deal</h2>
+  <form method="post" action="{{ url_for('views.deal_save') }}">
+    {{ csrf() }}
+    {{ deal_fields({'stage': 'new'}) }}
+    <button class="btn primary" type="submit">Add deal</button>
+    <p class="hint" style="margin-top:8px">Moving a deal to “won” marks its contact as a customer.</p>
+  </form>
+</div>
+{% endblock %}

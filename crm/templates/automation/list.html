@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, delete_button with context %}
+{% block title %}Nurture sequences{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Nurture sequences</h1>
+  <p class="muted" style="margin:4px 0 0">A series of emails sent automatically over days or weeks, starting when a contact joins.</p></div>
+  <form method="post" action="{{ url_for('views.sequences_run') }}">{{ csrf() }}
+    <button class="btn" type="submit" title="Due emails are sent automatically every minute. This checks right now.">Send due emails now</button></form></div>
+
+<div class="grid main-side">
+  <div class="panel tight table-wrap">
+  {% if sequences %}
+  <table>
+    <thead><tr><th>Sequence</th><th>Starts when</th><th class="num">Emails</th><th class="num">In progress</th><th class="num">Finished</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sequences %}
+    <tr>
+      <td><a href="{{ url_for('views.sequence_edit', sequence_id=s.id) }}"><strong>{{ s.name }}</strong></a></td>
+      <td style="font-size:14px">{% if s.trigger_stage or s.trigger_tag %}
+          {% if s.trigger_stage %}Stage is <b>{{ s.trigger_stage }}</b>{% endif %}{% if s.trigger_stage and s.trigger_tag %} and {% endif %}{% if s.trigger_tag %}tagged <span class="tag">{{ s.trigger_tag }}</span>{% endif %}
+        {% else %}<span class="muted">Manual enrollment</span>{% endif %}</td>
+      <td class="num">{{ s.steps }}</td><td class="num">{{ s.active_n }}</td><td class="num">{{ s.done_n }}</td>
+      <td>{% if s.active %}<span class="pill active">On</span>{% else %}<span class="pill paused">Paused</span>{% endif %}</td>
+      <td style="white-space:nowrap">{{ delete_button(url_for('views.sequence_delete', sequence_id=s.id), confirm='Delete this sequence? Contacts in it will stop receiving its emails.') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty">No sequences yet. Create one to welcome new leads automatically.</div>{% endif %}
+  </div>
+
+  <form method="post" action="{{ url_for('views.sequence_new') }}" class="panel">
+    {{ csrf() }}
+    <h2>New sequence</h2>
+    <div class="field"><label>Name</label><input type="text" name="name" placeholder="e.g. New lead welcome" required></div>
+    <div class="field"><label>Start automatically when stage is</label>
+      <select name="trigger_stage"><option value="">— (any)</option>{% for s in STAGES %}<option value="{{ s }}">{{ s|capitalize }}</option>{% endfor %}</select></div>
+    <div class="field"><label>…and/or contact has tag</label><input type="text" name="trigger_tag" placeholder="e.g. newsletter">
+      <div class="hint">Leave both blank to add people by hand only.</div></div>
+    <label class="check"><input type="checkbox" name="stop_on_customer" value="1" checked> Stop when the contact becomes a customer</label>
+    <button class="btn primary" type="submit" style="margin-top:12px">Create sequence</button>
+  </form>
+</div>
+{% endblock %}

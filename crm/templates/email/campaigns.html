@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, status_pill, delete_button with context %}
+{% block title %}Campaigns{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Campaigns</h1>
+  <p class="muted" style="margin:4px 0 0">One email to a whole group at once: a newsletter, an offer, an announcement.</p></div>
+  <a class="btn primary" href="{{ url_for('views.campaign_edit') }}">New campaign</a></div>
+<div class="panel tight table-wrap">
+{% if campaigns %}
+<table>
+  <thead><tr><th>Campaign</th><th>Audience</th><th>Status</th><th class="num">Sent</th><th class="num">Opened</th><th class="num">Clicked</th><th></th></tr></thead>
+  <tbody>
+  {% for c in campaigns %}{% set st = stats[c.id] %}
+  <tr>
+    <td><a href="{{ url_for('views.campaign_edit', campaign_id=c.id) }}"><strong>{{ c.name }}</strong></a>
+      <div class="muted" style="font-size:13px">{{ c.subject }}</div></td>
+    <td>{{ (c.segment_stage|capitalize ~ 's') if c.segment_stage else 'Everyone' }}{% if c.segment_tag %} tagged <span class="tag">{{ c.segment_tag }}</span>{% endif %}</td>
+    <td>{{ status_pill(c.status) }}{% if c.sent_at %}<div class="muted" style="font-size:12px">{{ c.sent_at|dt }}</div>{% endif %}</td>
+    <td class="num">{{ st.sent if c.status == 'sent' else '—' }}</td>
+    <td class="num">{{ (st.open_rate ~ '%') if c.status == 'sent' else '—' }}</td>
+    <td class="num">{{ (st.click_rate ~ '%') if c.status == 'sent' else '—' }}</td>
+    <td style="white-space:nowrap">
+      <form method="post" action="{{ url_for('views.campaign_duplicate', campaign_id=c.id) }}" class="inline">{{ csrf() }}<button class="btn small" type="submit">Duplicate</button></form>
+      {{ delete_button(url_for('views.campaign_delete', campaign_id=c.id)) }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty">No campaigns yet.</div>{% endif %}
+</div>
+{% endblock %}

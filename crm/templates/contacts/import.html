@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Import contacts{% endblock %}
+{% block content %}
+<div class="head"><div><div class="crumb"><a href="{{ url_for('views.contacts') }}">Contacts</a></div><h1>Import contacts</h1></div></div>
+<div class="grid main-side">
+  <form method="post" enctype="multipart/form-data" class="panel">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <div class="field"><label>CSV file</label><input type="file" name="file" accept=".csv,text/csv" required></div>
+    <div class="row">
+      <div class="field"><label>Stage for new contacts</label>
+        <select name="stage">{% for s in STAGES %}<option value="{{ s }}">{{ s|capitalize }}</option>{% endfor %}</select>
+        <div class="hint">Used when the file has no Stage column.</div></div>
+      <div class="field"><label>Add a tag to everyone imported</label><input type="text" name="tag" placeholder="e.g. trade-show-2026"></div>
+    </div>
+    <label class="check"><input type="checkbox" name="auto_enroll" value="1">
+      Start matching nurture sequences for these contacts</label>
+    <p class="hint">Leave this off when importing old lists so they don't all get a welcome email at once.</p>
+    <button class="btn primary" type="submit">Import</button>
+  </form>
+  <div class="help">
+    <strong>How it works</strong>
+    <ul>
+      <li>Export from Excel, Google Sheets, Gmail, Outlook or another CRM as CSV.</li>
+      <li>The file needs an <b>Email</b> column. These are also recognised: First name, Last name, Name, Phone, Company, Title, Stage, Source, Tags, Notes.</li>
+      <li>Contacts that already exist (same email) are updated, not duplicated.</li>
+      <li>Only import people who agreed to hear from you.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

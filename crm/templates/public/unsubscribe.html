@@ -1,0 +1,14 @@
+{% extends "public/base.html" %}
+{% block title %}Unsubscribe{% endblock %}
+{% block body %}
+<div class="center-page"><div class="center-card">
+{% if done %}
+  <h1>You're unsubscribed</h1>
+  <p class="muted" style="margin-top:8px">{{ contact.email }} won't receive any more emails from {{ business or 'us' }}.</p>
+{% else %}
+  <h1>Unsubscribe?</h1>
+  <p class="muted" style="margin-top:8px">Stop all emails from {{ business or 'us' }} to {{ contact.email }}.</p>
+  <form method="post"><button class="btn primary" type="submit">Unsubscribe</button></form>
+{% endif %}
+</div></div>
+{% endblock %}

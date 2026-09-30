@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<h1>Welcome</h1>
+<p class="muted">Set up your CRM. You can change all of this later in Settings.</p>
+<form method="post">
+  <div class="field"><label>Business name</label><input type="text" name="business_name" required></div>
+  <div class="field"><label>Your name</label><input type="text" name="from_name" required>
+    <div class="hint">Shown as the sender of your emails.</div></div>
+  <div class="field"><label>Your email</label><input type="email" name="from_email" required></div>
+  <div class="field"><label>Choose a password</label><input type="password" name="password" minlength="8" required></div>
+  <div class="field"><label>Confirm password</label><input type="password" name="confirm" minlength="8" required></div>
+  <button class="btn primary" type="submit">Get started</button>
+</form>
+{% endblock %}

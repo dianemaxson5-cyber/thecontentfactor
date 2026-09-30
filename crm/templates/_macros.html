@@ -1,0 +1,60 @@
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro stage_pill(stage) %}<span class="pill {{ stage }}">{{ stage|capitalize }}</span>{% endmacro %}
+
+{% macro tags(value) %}{% for t in (value or '').split(',') if t %}<span class="tag">{{ t }}</span>{% endfor %}{% endmacro %}
+
+{% macro status_pill(status) %}
+  {% set labels = {'sent': 'Sent', 'logged': 'Test mode', 'failed': 'Failed', 'draft': 'Draft',
+                   'active': 'Active', 'completed': 'Finished', 'stopped': 'Stopped'} %}
+  <span class="pill {{ status }}">{{ labels.get(status, status) }}</span>
+{% endmacro %}
+
+{% macro delete_button(action, label='Delete', confirm='Delete this? This cannot be undone.', back=None) %}
+<form method="post" action="{{ action }}" class="inline" data-confirm="{{ confirm }}">
+  {{ csrf() }}{% if back %}<input type="hidden" name="back" value="{{ back }}">{% endif %}
+  <button class="btn small danger" type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
+
+{#- Subject + body fields with merge-field chips. Place inside <form data-editor>. -#}
+{% macro editor(subject, body, merge_fields, content_items, templates=None) %}
+  {% if templates %}
+  <div class="field">
+    <label>Start from a template</label>
+    <select data-template-loader>
+      <option value="">Choose a template…</option>
+      {% for t in templates %}<option value="{{ t.id }}" data-subject="{{ t.subject }}" data-body="{{ t.body }}">{{ t.name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="field">
+    <label for="subject">Subject</label>
+    <input type="text" id="subject" name="subject" value="{{ subject or '' }}" required>
+  </div>
+  <div class="field">
+    <label for="body">Message</label>
+    <div class="editor-tools">
+      {% for tag, desc in merge_fields if not tag.startswith('{{content') %}
+        <button type="button" class="chip" data-insert="{{ tag }}" title="{{ desc }}">{{ tag }}</button>
+      {% endfor %}
+      {% if content_items %}
+      <select data-insert-select style="width:auto;padding:2px 8px;font-size:12px">
+        <option value="">+ Insert content link…</option>
+        {% for c in content_items %}<option value="{{ '{{' }}content:{{ c.slug }}{{ '}}' }}">{{ c.title }}</option>{% endfor %}
+      </select>
+      {% endif %}
+    </div>
+    <textarea class="body" id="body" name="body" required>{{ body or '' }}</textarea>
+    <div class="hint">Leave a blank line between paragraphs. Use **bold**, and [link text](https://…) for links.
+      Click a grey field above to personalize. An unsubscribe link and your address are added automatically.</div>
+  </div>
+{% endmacro %}
+
+{% macro preview_panel() %}
+  <div class="panel">
+    <div class="panel-head"><h2>Preview</h2><button class="btn small" data-send-test type="button">Send me a test</button></div>
+    <div class="preview-subject muted"></div>
+    <iframe class="preview-frame" title="Email preview" sandbox></iframe>
+  </div>
+{% endmacro %}

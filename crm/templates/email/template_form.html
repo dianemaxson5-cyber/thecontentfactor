@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import editor, preview_panel with context %}
+{% block title %}Template{% endblock %}
+{% block content %}
+<div class="head"><div><div class="crumb"><a href="{{ url_for('views.templates') }}">Templates</a></div>
+  <h1>{{ 'Edit template' if template_id else 'New template' }}</h1></div></div>
+<form method="post" data-editor>
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div class="grid two">
+    <div class="panel">
+      <div class="field"><label>Template name</label><input type="text" name="name" value="{{ t.name or '' }}" placeholder="e.g. Follow-up after call" required></div>
+      {{ editor(t.subject, t.body, merge_fields, content_items) }}
+      <button class="btn primary" type="submit">Save template</button>
+    </div>
+    <div>{{ preview_panel() }}</div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stage_pill with context %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Dashboard</h1>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('views.contact_new') }}">Add contact</a>
+    <a class="btn primary" href="{{ url_for('views.compose') }}">Write an email</a>
+  </div>
+</div>
+
+{% if total == 0 %}
+<div class="panel">
+  <h2>Get started in three steps</h2>
+  <ol>
+    <li><a href="{{ url_for('views.contacts_import') }}">Import your contacts</a> from a spreadsheet, or <a href="{{ url_for('views.contact_new') }}">add one by hand</a>.</li>
+    <li><a href="{{ url_for('views.settings') }}#smtp">Connect your email account</a> so messages are delivered.</li>
+    <li>Create a <a href="{{ url_for('views.sequences') }}">nurture sequence</a> to follow up with new leads automatically.</li>
+  </ol>
+</div>
+{% endif %}
+
+<div class="stats">
+  <div class="stat"><div class="label">Contacts</div><div class="value">{{ total }}</div><div class="sub">{{ new_contacts }} new in 30 days</div></div>
+  <div class="stat"><div class="label">Leads</div><div class="value">{{ counts.lead }}</div></div>
+  <div class="stat"><div class="label">Prospects</div><div class="value">{{ counts.prospect }}</div></div>
+  <div class="stat"><div class="label">Customers</div><div class="value">{{ counts.customer }}</div></div>
+  <div class="stat"><div class="label">Open pipeline</div><div class="value">{{ open_value|money }}</div><div class="sub">{{ open_deals }} open deal(s) · {{ (won.total or 0)|money }} won</div></div>
+</div>
+
+<div class="grid two">
+  <div class="panel">
+    <h2>Email, last 30 days</h2>
+    <div class="mini-stats">
+      <div><div class="muted">Sent</div><div class="value">{{ stats.sent }}</div></div>
+      <div><div class="muted">Opened</div><div class="value">{{ stats.open_rate }}%</div></div>
+      <div><div class="muted">Clicked</div><div class="value">{{ stats.click_rate }}%</div></div>
+    </div>
+    <p class="muted" style="margin-top:14px">{{ active_nurture }} contact(s) are in a nurture sequence right now.</p>
+  </div>
+  <div class="panel">
+    <h2>Recent activity</h2>
+    {% if recent %}
+    <ul class="timeline">
+      {% for a in recent %}
+      <li><div>
+        <a href="{{ url_for('views.contact_detail', contact_id=a.contact_id) }}">{{ (a.first_name ~ ' ' ~ a.last_name).strip() or a.email }}</a>
+        <span class="muted">· {{ a.subject }}</span>
+        <div class="when">{{ a.created_at|dt }}</div>
+      </div></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">Nothing yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

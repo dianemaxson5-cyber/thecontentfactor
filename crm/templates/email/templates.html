@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import delete_button with context %}
+{% block title %}Templates{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Templates</h1>
+  <p class="muted" style="margin:4px 0 0">Reusable emails for things you write often: follow-ups, quotes, thank-yous.</p></div>
+  <a class="btn primary" href="{{ url_for('views.template_edit') }}">New template</a></div>
+<div class="panel tight table-wrap">
+{% if templates %}
+<table><thead><tr><th>Name</th><th>Subject</th><th></th></tr></thead><tbody>
+{% for t in templates %}
+<tr><td><a href="{{ url_for('views.template_edit', template_id=t.id) }}"><strong>{{ t.name }}</strong></a></td>
+  <td>{{ t.subject }}</td>
+  <td style="white-space:nowrap;text-align:right"><a class="btn small" href="{{ url_for('views.compose', template_id=t.id) }}">Use</a>
+    {{ delete_button(url_for('views.template_delete', template_id=t.id)) }}</td></tr>
+{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">No templates yet.</div>{% endif %}
+</div>
+{% endblock %}

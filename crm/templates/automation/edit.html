@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, status_pill, delete_button with context %}
+{% block title %}{{ s.name }}{% endblock %}
+{% macro step_fields(step={}, first=False) %}
+  <div class="row" style="grid-template-columns:200px 1fr">
+    <div class="field"><label>Wait (days)</label>
+      <input type="number" name="delay_days" min="0" value="{{ step.delay_days if step else (0 if first else 3) }}">
+      <div class="hint">{{ 'After they join. 0 = right away.' if first else 'After the previous email.' }}</div></div>
+    <div class="field"><label>Subject</label><input type="text" name="subject" value="{{ step.subject or '' }}" required></div>
+  </div>
+  <div class="field"><label>Message</label><textarea class="body" name="body" style="min-height:200px" required>{{ step.body or '' }}</textarea></div>
+{% endmacro %}
+{% block content %}
+<div class="head">
+  <div><div class="crumb"><a href="{{ url_for('views.sequences') }}">Nurture sequences</a></div>
+    <h1>{{ s.name }}</h1>
+    <div class="muted">{{ stats.sent }} emails sent · {{ stats.open_rate }}% opened · {{ stats.click_rate }}% clicked</div></div>
+  <form method="post" action="{{ url_for('views.sequence_toggle', sequence_id=s.id) }}">
+    {{ csrf() }}<input type="hidden" name="back" value="{{ request.path }}">
+    {% if s.active %}<button class="btn" type="submit">Pause sequence</button>
+    {% else %}<button class="btn primary" type="submit">Turn on</button>{% endif %}
+  </form>
+</div>
+{% if not s.active %}<div class="banner">This sequence is paused. Nobody new is enrolled and no emails go out until you turn it on.</div>{% endif %}
+
+<div class="grid main-side">
+  <div id="steps">
+    <div class="help" style="margin-bottom:16px">
+      <strong>Personalize:</strong> click a field to insert it into the email you're editing.
+      <div class="editor-tools" style="margin-bottom:0">
+        {% for tag, desc in merge_fields if not tag.startswith('{{content') %}<button type="button" class="chip" data-insert="{{ tag }}" title="{{ desc }}">{{ tag }}</button>{% endfor %}
+        {% if content_items %}<select data-insert-select style="width:auto;padding:2px 8px;font-size:12px"><option value="">+ Insert content link…</option>
+          {% for c in content_items %}<option value="{{ '{{' }}content:{{ c.slug }}{{ '}}' }}">{{ c.title }}</option>{% endfor %}</select>{% endif %}
+      </div>
+    </div>
+    {% for step in steps %}
+      {% if not loop.first or step.delay_days %}<div class="wait">⏱ Wait {{ step.delay_days }} day{{ '' if step.delay_days == 1 else 's' }}</div>{% endif %}
+      <form method="post" action="{{ url_for('views.sequence_step_save', sequence_id=s.id) }}" class="panel step">
+        {{ csrf() }}<input type="hidden" name="step_id" value="{{ step.id }}">
+        <div class="panel-head"><h2 style="margin:0">Email {{ loop.index }}</h2></div>
+        {{ step_fields(step, loop.first) }}
+        <button class="btn small primary" type="submit">Save email {{ loop.index }}</button>
+      </form>
+      <div style="margin:-12px 0 20px;text-align:right">{{ delete_button(url_for('views.sequence_step_delete', sequence_id=s.id, step_id=step.id), label='Remove email ' ~ loop.index) }}</div>
+    {% endfor %}
+    <form method="post" action="{{ url_for('views.sequence_step_save', sequence_id=s.id) }}" class="panel" style="border-style:dashed">
+      {{ csrf() }}
+      <h2>Add email {{ steps|length + 1 }}</h2>
+      {{ step_fields(None, not steps) }}
+      <button class="btn primary" type="submit">Add to sequence</button>
+    </form>
+  </div>
+
+  <div>
+    <form method="post" class="panel">
+      {{ csrf() }}
+      <h2>Settings</h2>
+      <div class="field"><label>Name</label><input type="text" name="name" value="{{ s.name }}"></div>
+      <div class="field"><label>Start automatically when stage is</label>
+        <select name="trigger_stage"><option value="">— (any)</option>{% for st in STAGES %}<option value="{{ st }}" {{ 'selected' if st == s.trigger_stage }}>{{ st|capitalize }}</option>{% endfor %}</select></div>
+      <div class="field"><label>…and/or contact has tag</label><input type="text" name="trigger_tag" value="{{ s.trigger_tag }}" list="tag-list">
+        <datalist id="tag-list">{% for t in tags %}<option value="{{ t }}">{% endfor %}</datalist>
+        <div class="hint">Leave both blank to enroll people by hand.</div></div>
+      <label class="check"><input type="checkbox" name="stop_on_customer" value="1" {{ 'checked' if s.stop_on_customer }}> Stop when the contact becomes a customer</label>
+      <label class="check"><input type="checkbox" name="enroll_existing" value="1"> Also enroll existing contacts who match now</label>
+      <button class="btn small primary" type="submit" style="margin-top:10px">Save settings</button>
+    </form>
+
+    <div class="panel">
+      <h2>People ({{ enrollments|length }})</h2>
+      {% for e in enrollments %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">
+          <div><a href="{{ url_for('views.contact_detail', contact_id=e.contact_id) }}">{{ (e.first_name ~ ' ' ~ e.last_name).strip() or e.email }}</a>
+            <div class="muted" style="font-size:12px">{{ status_pill(e.status) }}
+              {% if e.status == 'active' %}Email {{ e.next_step + 1 }} on {{ e.next_send_at|dt }}{% endif %}</div></div>
+          {% if e.status == 'active' %}
+          <form method="post" action="{{ url_for('views.enrollment_stop', enrollment_id=e.id) }}" data-confirm="Remove this contact from the sequence?">
+            {{ csrf() }}<input type="hidden" name="back" value="{{ request.path }}"><button class="linkish danger" type="submit">Remove</button></form>
+          {% endif %}
+        </div>
+      {% else %}<p class="muted">Nobody yet. Enroll people from their contact page, from the contact list, or with the setting above.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

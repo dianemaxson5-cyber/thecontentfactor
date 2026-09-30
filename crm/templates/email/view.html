@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_pill with context %}
+{% block title %}{{ e.subject }}{% endblock %}
+{% block content %}
+<div class="head"><div><div class="crumb"><a href="{{ url_for('views.emails') }}">Sent emails</a></div><h1>{{ e.subject }}</h1></div></div>
+<div class="grid main-side">
+  <div class="panel"><iframe class="preview-frame" style="min-height:560px" srcdoc="{{ e.body_html }}" sandbox title="Email"></iframe></div>
+  <div class="panel">
+    <dl class="facts">
+      <dt>To</dt><dd>{% if e.contact_id %}<a href="{{ url_for('views.contact_detail', contact_id=e.contact_id) }}">{{ e.to_email }}</a>{% else %}{{ e.to_email }}{% endif %}</dd>
+      <dt>Status</dt><dd>{{ status_pill(e.status) }}</dd>
+      {% if e.error %}<dt>Error</dt><dd style="color:var(--err)">{{ e.error }}</dd>{% endif %}
+      <dt>Sent</dt><dd>{{ e.sent_at|dt }}</dd>
+      <dt>Opened</dt><dd>{{ e.opened_at|dt if e.opened_at else 'Not yet' }}</dd>
+      <dt>Clicked</dt><dd>{{ e.clicked_at|dt if e.clicked_at else 'Not yet' }}</dd>
+    </dl>
+    {% if e.status == 'logged' %}<p class="hint" style="margin-top:12px">Test mode: this email was recorded but not delivered.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

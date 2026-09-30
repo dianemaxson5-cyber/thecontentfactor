@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, stage_pill, tags as tag_list with context %}
+{% block title %}Contacts{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Contacts</h1>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('views.contacts_import') }}">Import CSV</a>
+    <a class="btn" href="{{ url_for('views.contacts_export') }}">Export CSV</a>
+    <a class="btn primary" href="{{ url_for('views.contact_new') }}">Add contact</a>
+  </div>
+</div>
+
+<form class="filters panel" method="get" style="padding:12px">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search name, email, company…">
+  <select name="stage" onchange="this.form.submit()">
+    <option value="">All stages</option>
+    {% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if s == stage }}>{{ s|capitalize }}</option>{% endfor %}
+  </select>
+  <select name="tag" onchange="this.form.submit()">
+    <option value="">All tags</option>
+    {% for t in tags %}<option value="{{ t }}" {{ 'selected' if t == tag }}>{{ t }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Search</button>
+  {% if q or stage or tag %}<a href="{{ url_for('views.contacts') }}">Clear</a>{% endif %}
+</form>
+
+<form method="post" action="{{ url_for('views.contacts_bulk') }}">
+  {{ csrf() }}
+  <div class="filters" style="margin-bottom:10px">
+    <span class="muted">With selected:</span>
+    <select name="action" id="bulk-action">
+      <option value="tag">Add tag</option>
+      <option value="stage">Set stage</option>
+      <option value="enroll">Enroll in sequence</option>
+      <option value="delete">Delete</option>
+    </select>
+    <input type="text" name="value" id="bulk-value" placeholder="tag, stage or sequence" list="bulk-options" style="min-width:200px">
+    <datalist id="bulk-options">
+      {% for t in tags %}<option value="{{ t }}">{% endfor %}
+      {% for s in STAGES %}<option value="{{ s }}">{% endfor %}
+    </datalist>
+    <select name="value" id="bulk-seq" style="display:none" disabled>
+      {% for s in sequences %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+    </select>
+    <button class="btn small" type="submit" data-confirm="Apply to the selected contacts?">Apply</button>
+    <span class="muted" style="margin-left:auto">{{ contacts|length }} contact(s)</span>
+  </div>
+
+  <div class="panel tight table-wrap">
+  {% if contacts %}
+  <table>
+    <thead><tr>
+      <th style="width:30px"><input type="checkbox" data-select-all aria-label="Select all"></th>
+      <th>Name</th><th>Company</th><th>Stage</th><th>Tags</th><th>Updated</th>
+    </tr></thead>
+    <tbody>
+    {% for c in contacts %}
+      <tr>
+        <td><input type="checkbox" name="ids" value="{{ c.id }}" aria-label="Select"></td>
+        <td><a href="{{ url_for('views.contact_detail', contact_id=c.id) }}"><strong>{{ (c.first_name ~ ' ' ~ c.last_name).strip() or c.email }}</strong></a>
+          <div class="muted" style="font-size:13px">{{ c.email }}{% if c.unsubscribed %} · <span class="pill unsub">Unsubscribed</span>{% endif %}</div></td>
+        <td>{{ c.company }}</td>
+        <td>{{ stage_pill(c.stage) }}</td>
+        <td>{{ tag_list(c.tags) }}</td>
+        <td class="muted" style="font-size:13px">{{ c.updated_at|dt(false) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No contacts found. <a href="{{ url_for('views.contact_new') }}">Add one</a> or <a href="{{ url_for('views.contacts_import') }}">import a spreadsheet</a>.</div>
+  {% endif %}
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  const action = document.getElementById("bulk-action"),
+        text = document.getElementById("bulk-value"),
+        seq = document.getElementById("bulk-seq");
+  action.addEventListener("change", () => {
+    const enroll = action.value === "enroll", del = action.value === "delete";
+    seq.style.display = enroll ? "" : "none"; seq.disabled = !enroll;
+    text.style.display = enroll || del ? "none" : ""; text.disabled = enroll || del;
+  });
+</script>
+{% endblock %}

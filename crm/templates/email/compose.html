@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import editor, preview_panel with context %}
+{% block title %}Write an email{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Write an email</h1>
+  <p class="muted" style="margin:4px 0 0">A personal email to one or a few contacts. Each person gets their own copy with their details filled in.</p></div></div>
+<form method="post" data-editor>
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div class="grid two">
+    <div class="panel">
+      <div class="field">
+        <label>To</label>
+        <input type="search" placeholder="Filter contacts…" data-recipient-filter style="margin-bottom:6px">
+        <div class="recipients">
+          {% for c in contacts %}
+          <label><input type="checkbox" name="contact_ids" value="{{ c.id }}" {{ 'checked' if c.id == contact_id }} {{ 'disabled' if c.unsubscribed }}>
+            <span>{{ (c.first_name ~ ' ' ~ c.last_name).strip() or c.email }} <span class="muted">{{ c.email }}{% if c.company %} · {{ c.company }}{% endif %}{% if c.unsubscribed %} · unsubscribed{% endif %}</span></span></label>
+          {% else %}<p class="muted">No contacts yet. <a href="{{ url_for('views.contact_new') }}">Add one first.</a></p>{% endfor %}
+        </div>
+      </div>
+      {{ editor(subject, body, merge_fields, content_items, templates) }}
+      <button class="btn primary" type="submit" data-confirm="Send this email now?">Send</button>
+    </div>
+    <div>{{ preview_panel() }}</div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_pill with context %}
+{% block title %}Sent emails{% endblock %}
+{% block content %}
+<div class="head"><h1>Sent emails</h1></div>
+<div class="stats">
+  <div class="stat"><div class="label">Emails</div><div class="value">{{ stats.sent }}</div></div>
+  <div class="stat"><div class="label">Open rate</div><div class="value">{{ stats.open_rate }}%</div><div class="sub">{{ stats.opened }} opened</div></div>
+  <div class="stat"><div class="label">Click rate</div><div class="value">{{ stats.click_rate }}%</div><div class="sub">{{ stats.clicked }} clicked</div></div>
+</div>
+<p class="hint">Open tracking depends on the recipient loading images, so real open rates are usually higher than shown.</p>
+<div class="panel tight table-wrap">
+{% if emails %}
+<table>
+  <thead><tr><th>To</th><th>Subject</th><th>Status</th><th class="num">Opens</th><th class="num">Clicks</th><th>Sent</th></tr></thead>
+  <tbody>
+  {% for e in emails %}
+  <tr>
+    <td>{% if e.contact_id %}<a href="{{ url_for('views.contact_detail', contact_id=e.contact_id) }}">{{ (e.first_name ~ ' ' ~ e.last_name).strip() or e.to_email }}</a>{% else %}{{ e.to_email }}{% endif %}</td>
+    <td><a href="{{ url_for('views.email_view', email_id=e.id) }}">{{ e.subject }}</a>
+      <div class="muted" style="font-size:12px">{% if e.campaign_id %}Campaign{% elif e.sequence_id %}Nurture{% else %}Personal{% endif %}</div></td>
+    <td>{{ status_pill(e.status) }}</td>
+    <td class="num">{{ e.open_count }}</td>
+    <td class="num">{{ e.click_count }}</td>
+    <td class="muted" style="font-size:13px;white-space:nowrap">{{ e.sent_at|dt }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty">No emails yet.</div>{% endif %}
+</div>
+{% endblock %}

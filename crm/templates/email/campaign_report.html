@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, status_pill with context %}
+{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<div class="head"><div><div class="crumb"><a href="{{ url_for('views.campaigns') }}">Campaigns</a></div>
+  <h1>{{ c.name }}</h1><div class="muted">Sent {{ c.sent_at|dt }} · “{{ c.subject }}”</div></div>
+  <form method="post" action="{{ url_for('views.campaign_duplicate', campaign_id=c.id) }}">{{ csrf() }}<button class="btn" type="submit">Duplicate as new draft</button></form></div>
+<div class="stats">
+  <div class="stat"><div class="label">Sent</div><div class="value">{{ stats.sent }}</div></div>
+  <div class="stat"><div class="label">Opened</div><div class="value">{{ stats.open_rate }}%</div><div class="sub">{{ stats.opened }} people</div></div>
+  <div class="stat"><div class="label">Clicked</div><div class="value">{{ stats.click_rate }}%</div><div class="sub">{{ stats.clicked }} people</div></div>
+</div>
+<div class="panel tight table-wrap">
+<table>
+  <thead><tr><th>Recipient</th><th>Status</th><th>Opened</th><th>Clicked</th></tr></thead>
+  <tbody>
+  {% for r in recipients %}
+  <tr><td>{% if r.contact_id %}<a href="{{ url_for('views.contact_detail', contact_id=r.contact_id) }}">{{ (r.first_name ~ ' ' ~ r.last_name).strip() or r.to_email }}</a>{% else %}{{ r.to_email }}{% endif %}</td>
+    <td>{{ status_pill(r.status) }}</td>
+    <td>{{ '✓' if r.open_count else '' }}</td><td>{{ '✓' if r.click_count else '' }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

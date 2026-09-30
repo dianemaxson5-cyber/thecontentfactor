@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add contact' if new else 'Edit contact' }}{% endblock %}
+{% block content %}
+<div class="head"><h1>{{ 'Add contact' if new else 'Edit contact' }}</h1></div>
+<form method="post" class="panel" style="max-width:760px">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div class="row">
+    <div class="field"><label>First name</label><input type="text" name="first_name" value="{{ contact.first_name or '' }}" autofocus></div>
+    <div class="field"><label>Last name</label><input type="text" name="last_name" value="{{ contact.last_name or '' }}"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Email *</label><input type="email" name="email" value="{{ contact.email or '' }}" required></div>
+    <div class="field"><label>Phone</label><input type="text" name="phone" value="{{ contact.phone or '' }}"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Company</label><input type="text" name="company" value="{{ contact.company or '' }}"></div>
+    <div class="field"><label>Job title</label><input type="text" name="title" value="{{ contact.title or '' }}"></div>
+  </div>
+  <div class="row three">
+    <div class="field"><label>Stage</label>
+      <select name="stage">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if s == contact.stage }}>{{ s|capitalize }}</option>{% endfor %}</select>
+      <div class="hint">Lead → Prospect → Customer</div></div>
+    <div class="field"><label>Source</label><input type="text" name="source" value="{{ contact.source or '' }}" placeholder="Referral, website, event…"></div>
+    <div class="field"><label>Tags</label><input type="text" name="tags" value="{{ contact.tags or '' }}" placeholder="newsletter, vip">
+      <div class="hint">Separate with commas.</div></div>
+  </div>
+  <div class="field"><label>Notes</label><textarea name="notes">{{ contact.notes or '' }}</textarea></div>
+  <button class="btn primary" type="submit">Save</button>
+  <a class="btn" href="{{ url_for('views.contacts') if new else url_for('views.contact_detail', contact_id=contact.id) }}">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "public/base.html" %}
+{% block title %}Sign up{% endblock %}
+{% block body %}
+<div class="center-page"><div class="center-card">
+{% if thanks %}
+  <h1>Thanks for signing up!</h1>
+  <p class="muted" style="margin-top:8px">Watch your inbox. We'll be in touch soon.</p>
+{% else %}
+  <h1>Stay in touch{% if business %} with {{ business }}{% endif %}</h1>
+  <p class="muted" style="margin-top:8px">Get useful tips and news by email. Unsubscribe any time.</p>
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="hidden" name="tag" value="{{ tag or '' }}">
+    <div class="row">
+      <div class="field"><label>First name</label><input type="text" name="first_name"></div>
+      <div class="field"><label>Last name</label><input type="text" name="last_name"></div>
+    </div>
+    <div class="field"><label>Email *</label><input type="email" name="email" required></div>
+    <div class="field"><label>Company</label><input type="text" name="company"></div>
+    <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button class="btn primary" type="submit">Sign up</button>
+  </form>
+{% endif %}
+</div></div>
+{% endblock %}

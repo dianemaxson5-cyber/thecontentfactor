@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="{{ csrf_token() }}">
+  <title>{% block title %}{% endblock %} · {{ business_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% set here = request.endpoint or '' %}
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="{{ url_for('views.dashboard') }}">{{ business_name }} <span>CRM</span></a>
+    <button class="btn small menu-toggle" type="button">Menu</button>
+    <nav>
+      <a href="{{ url_for('views.dashboard') }}" class="{{ 'on' if here == 'views.dashboard' }}">Dashboard</a>
+      <div class="group">CRM</div>
+      <a href="{{ url_for('views.contacts') }}" class="{{ 'on' if here.startswith('views.contact') }}">Contacts</a>
+      <a href="{{ url_for('views.deals') }}" class="{{ 'on' if here.startswith('views.deal') }}">Deals</a>
+      <div class="group">Marketing</div>
+      <a href="{{ url_for('views.compose') }}" class="{{ 'on' if here == 'views.compose' }}">Write an email</a>
+      <a href="{{ url_for('views.campaigns') }}" class="{{ 'on' if here.startswith('views.campaign') }}">Campaigns</a>
+      <a href="{{ url_for('views.sequences') }}" class="{{ 'on' if here.startswith('views.sequence') }}">Nurture sequences</a>
+      <a href="{{ url_for('views.content') }}" class="{{ 'on' if here.startswith('views.content') }}">Content library</a>
+      <a href="{{ url_for('views.templates') }}" class="{{ 'on' if here.startswith('views.template') }}">Templates</a>
+      <a href="{{ url_for('views.emails') }}" class="{{ 'on' if here.startswith('views.email') }}">Sent emails</a>
+      <div class="group">Account</div>
+      <a href="{{ url_for('views.settings') }}" class="{{ 'on' if here == 'views.settings' }}">Settings</a>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button class="linkish" type="submit">Log out</button>
+      </form>
+    </nav>
+  </aside>
+  <main class="main">
+    {% if test_mode %}
+    <div class="banner"><strong>Test mode.</strong> Emails are saved to <a href="{{ url_for('views.emails') }}">Sent emails</a> but not delivered.
+      <a href="{{ url_for('views.settings') }}#smtp">Connect your email account</a> to start sending.</div>
+    {% endif %}
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

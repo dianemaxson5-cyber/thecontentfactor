@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import delete_button with context %}
+{% block title %}Content library{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Content library</h1>
+  <p class="muted" style="margin:4px 0 0">Articles, guides, videos and links you share with contacts. Views are tracked per person.</p></div>
+  <a class="btn primary" href="{{ url_for('views.content_edit') }}">Add content</a>
+</div>
+<div class="panel tight table-wrap">
+{% if items %}
+<table>
+  <thead><tr><th>Title</th><th>Type</th><th class="num">Views</th><th>Share</th><th></th></tr></thead>
+  <tbody>
+  {% for i in items %}
+  <tr>
+    <td><strong>{{ i.title }}</strong>{% if i.summary %}<div class="muted" style="font-size:13px">{{ i.summary }}</div>{% endif %}
+      <div style="font-size:12px;margin-top:4px">Merge tag: <code>{{ '{{' }}content:{{ i.slug }}{{ '}}' }}</code></div></td>
+    <td>{{ 'Article' if i.body.strip() else 'Link' }}</td>
+    <td class="num">{{ i.views }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn small" href="{{ url_for('views.content_share', item_id=i.id, to='contact') }}">Email to a contact</a>
+      <a class="btn small" href="{{ url_for('views.content_share', item_id=i.id, to='campaign') }}">Email to a list</a>
+      <button class="btn small" type="button" data-copy="{{ url_for('public.content_page', slug=i.slug, _external=True) }}">Copy link</button>
+    </td>
+    <td style="white-space:nowrap"><a href="{{ url_for('views.content_edit', item_id=i.id) }}">Edit</a>
+      {{ delete_button(url_for('views.content_delete', item_id=i.id)) }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No content yet. Add a blog post, a how-to guide, a case study or a link to a video.</div>
+{% endif %}
+</div>
+{% endblock %}
